@@ -37,7 +37,7 @@ def preprocess_tweet_text(tweet):
     # Remove user @ references and '#' from tweet
     tweet = re.sub(r'\@\w+|\#','', tweet)
 
-    
+    tweet =re.sub(r'\w+...\s?','',tweet)
     # Remove punctuations
     tweet = tweet.translate(str.maketrans('', '', string.punctuation))
     # Remove stopwords
@@ -54,11 +54,11 @@ def preprocess_tweet_text(tweet):
     # lemmatizer = WordNetLemmatizer()
     # lemma_words = [lemmatizer.lemmatize(w, pos='a') for w in filtered_words]
     
-    return " ".join(filtered_words)
+    return filtered_words
 
 
 def get_feature_vector_TFIDF(train_fit):
-    vector = TfidfVectorizer(sublinear_tf=True, ngram_range=(1,3))
+    vector = TfidfVectorizer(sublinear_tf=True)
     vector.fit(train_fit)
     return vector
 
@@ -71,7 +71,7 @@ def int_to_string(sentiment):
         return "Positive"
 
 def get_feautures_BAGWORDS(train_fit):
-    matrix = CountVectorizer(ngram_range=(1,3))
+    matrix = CountVectorizer(ngram_range=(2,2))
     X = matrix.fit(train_fit)
     return X
     
@@ -80,14 +80,14 @@ def main():
     # Remover columnas no deseadas
     n_dataset = remove_unwanted_cols(dataset, ['t_id', 'created_at', 'query', 'user'])
     #Preprocess data
-    dataset.text = dataset['text'].apply(preprocess_tweet_text)
+    n_dataset.text = dataset['text'].apply(preprocess_tweet_text)
     
     #SELECIIONAR UN METODO DE VETORIZACION (BW O TFIDF)
     # #Extraemos los features de las palabras para usar TFIDF
     # tf_vector = get_feature_vector_TFIDF(np.array(dataset.iloc[:, 1]).ravel())
     # X = tf_vector.transform(np.array(dataset.iloc[:, 1]).ravel())
     #Extraemos los features de las palabras para usar Bag of Words
-    bw_vector = get_feautures_BAGWORDS(np.array(dataset.iloc[:, 1]).ravel())
+    bw_vector = get_feautures_BAGWORDS(np.array(n_dataset.iloc[:, 1]).ravel())
     X = bw_vector.transform(np.array(dataset.iloc[:,1]).ravel())
     
     #Creamos un array de la columna target (0,4)
@@ -120,7 +120,7 @@ def main():
 
     # Creando los features
     test_ds.text = test_ds["text"].apply(preprocess_tweet_text)
-    test_feature =bw_vector.transform(np.array(test_ds.iloc[:, 0]).ravel())
+    test_feature = bw_vector.transform(np.array(test_ds.iloc[:, 0]).ravel())
 
     # Prediccion de las clases
     test_prediction_NB = NB_model.predict(test_feature)
@@ -134,4 +134,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
